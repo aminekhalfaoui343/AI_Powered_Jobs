@@ -1,0 +1,1 @@
+"""FastAPI and ARQ integration for asynchronous job processing."""
