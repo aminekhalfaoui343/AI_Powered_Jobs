@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: job-intelligence-config
+  namespace: job-intelligence
+  labels:
+    app.kubernetes.io/name: job-intelligence
+    app.kubernetes.io/part-of: job-intelligence
+data:
+  REDIS_DSN: redis://redis:6379
+  POSTGRES_HOST: postgres
+  POSTGRES_PORT: "5432"
+  OPENROUTER_BASE_URL: https://openrouter.ai/api/v1
+  OPENROUTER_MODEL: liquid/lfm-2.5-2.6b:free
+  LLM_MAX_CONCURRENT: "5"
+  LLM_MAX_TRIES: "3"
+  LLM_JOB_TIMEOUT: "60"
+  SCRAPE_TIMEOUT_SECONDS: "25"
+  ARQ_MAX_TRIES: "2"
+  JOB_SOURCES_ENABLED: france_travail,arbeitnow,remotive,jobicy
+  LANGSMITH_TRACING: "false"
+  LANGSMITH_PROJECT: job-intelligence
+  LANGSMITH_ENDPOINT: https://api.smith.langchain.com

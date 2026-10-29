@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: job-intelligence
+  labels:
+    app.kubernetes.io/name: job-intelligence
+    app.kubernetes.io/component: worker
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: job-intelligence
+        app.kubernetes.io/component: worker
+    spec:
+      initContainers:
+        - name: wait-for-redis
+          image: redis:7-alpine
+          command: ["sh", "-c", "until redis-cli -h redis ping; do sleep 2; done"]
+        - name: wait-for-postgres
+          image: postgres:16-alpine
+          env:
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: job-intelligence-secrets
+                  key: POSTGRES_USER
+            - name: PGDATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: job-intelligence-secrets
+                  key: POSTGRES_DB
+          command: ["sh", "-c", "until pg_isready -h postgres; do sleep 2; done"]
+      containers:
+        - name: worker
+          image: job-intelligence:local
+          imagePullPolicy: IfNotPresent
+          command: ["arq", "app.worker.WorkerSettings"]
+          envFrom:
+            - configMapRef:
+                name: job-intelligence-config
+            - secretRef:
+                name: job-intelligence-secrets
+          resources:
+            requests:
+              cpu: 150m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi

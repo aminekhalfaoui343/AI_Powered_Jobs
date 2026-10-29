@@ -1,0 +1,48 @@
+# Secrets and local environment files
+.env
+.env.*
+!.env.example
+!.env.local.example
+secrets/
+
+# Dependencies and generated files
+.venv/
+node_modules/
+.next/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+*.tsbuildinfo
+
+# Local data and build output
+dump.rdb
+dist/
+build/
+
+# Python environments and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Node.js and Next.js
+node_modules/
+.next/
+*.tsbuildinfo
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+!.env.local.example
+*.pem
+*.key
+credentials.json
+
+# Kubernetes secrets
+k8s/secret.yaml
+
+# Local infrastructure and generated data
+.vagrant/
+dump.rdb

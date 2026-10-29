@@ -1,0 +1,106 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: job-scraper-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: job-scraper-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-jobintel}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jobintel}
+      POSTGRES_DB: ${POSTGRES_DB:-jobintel}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: job-scraper-api
+    env_file:
+      - .env
+    environment:
+      REDIS_DSN: redis://redis:6379
+      JOB_SOURCES_ENABLED: ${JOB_SOURCES_ENABLED:-france_travail,arbeitnow,remotive,jobicy}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER:-jobintel}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jobintel}
+      POSTGRES_DB: ${POSTGRES_DB:-jobintel}
+      OPENROUTER_BASE_URL: ${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-liquid/lfm-2.5-2.6b:free}
+      LANGSMITH_TRACING: ${LANGSMITH_TRACING:-false}
+      LANGSMITH_API_KEY: ${LANGSMITH_API_KEY:-}
+      LANGSMITH_PROJECT: ${LANGSMITH_PROJECT:-job-intelligence}
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: job-scraper-worker
+    env_file:
+      - .env
+    environment:
+      REDIS_DSN: redis://redis:6379
+      JOB_SOURCES_ENABLED: ${JOB_SOURCES_ENABLED:-france_travail,arbeitnow,remotive,jobicy}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER:-jobintel}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jobintel}
+      POSTGRES_DB: ${POSTGRES_DB:-jobintel}
+      OPENROUTER_BASE_URL: ${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-liquid/lfm-2.5-2.6b:free}
+      LANGSMITH_TRACING: ${LANGSMITH_TRACING:-false}
+      LANGSMITH_API_KEY: ${LANGSMITH_API_KEY:-}
+      LANGSMITH_PROJECT: ${LANGSMITH_PROJECT:-job-intelligence}
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    command: arq app.worker.WorkerSettings
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend.Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://api:8000
+    container_name: job-scraper-frontend
+    environment:
+      NEXT_PUBLIC_API_URL: http://api:8000
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

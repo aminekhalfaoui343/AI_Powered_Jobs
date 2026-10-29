@@ -1,0 +1,12 @@
+---
+description: Job collection sources — authorized APIs only, no restricted-site scraping.
+alwaysApply: true
+---
+
+# Job collection
+
+- France Travail, Arbeitnow, Remotive, and Jobicy are the working free collectors.
+- LinkedIn, Indeed, and HelloWork have no working scrapers. Do not scrape them or bypass CAPTCHA, auth, robots.txt, or anti-bot controls.
+- Prefer official APIs, open datasets, and feeds that allow automated collection.
+- Keep Remotive and Jobicy listing URLs for attribution.
+- Reuse FastAPI, ARQ, Redis, PostgreSQL, and the existing `DiscoveredJob` schema.
